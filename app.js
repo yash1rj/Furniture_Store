@@ -9,6 +9,7 @@ const cartTotal = document.querySelector(".cart-total");
 const cartContent = document.querySelector(".cart-content");
 const productsDOM = document.querySelector(".products-center");
 
+let buttonsDOM = [];
 let cart = [];
 
 // getting the products
@@ -64,6 +65,7 @@ class UI {
 	
 	getBagButtons() {
 		const buttons = [...document.querySelectorAll(".bag-btn")];
+		buttonsDOM = buttons;
 		
 		buttons.forEach(button => {
 			let id = button.dataset.id;
@@ -82,12 +84,23 @@ class UI {
 					
 					// add to cart
 					let cartItem = { ...Storage.getProduct(id), amount: 1 };
+					// console.log(cartItem);
+					
 					cart = [...cart, cartItem];
+					//console.log(cart);
+					
+					// save cart in local Storage
 					Storage.saveCart(cart);
 					
 					// add to DOM
+					
+					// set cart values
 					this.setCartValues(cart);
+					
+					// display cart items
 					this.addCartItem(cartItem);
+					
+					// show the cart
 					this.showCart();
 				});
 			}
@@ -105,6 +118,7 @@ class UI {
 		
 		cartTotal.innerText = parseFloat(tempTotal.toFixed(2));
 		cartItems.innerText = itemsTotal;
+		// console.log({cartTotal, cartItems});
 	}
 	
 	addCartItem(item) {
@@ -131,6 +145,7 @@ class UI {
 		`;
 		
 		cartContent.appendChild(div);
+		// console.log(cartContent);
 	}
 	
 	showCart() {
@@ -163,26 +178,73 @@ class UI {
 		clearCartBtn.addEventListener("click", () => {
 			this.clearCart();
 		});
+		
+		cartContent.addEventListener("click", event => {
+			if (event.target.classList.contains("remove-item")) {
+				let removeItem = event.target;
+				let id = removeItem.dataset.id;
+				
+				cartContent.removeChild(removeItem.parentElement.parentElement);
+				
+				// remove item
+				this.removeItem(id);
+			}
+			else if (event.target.classList.contains("fa-chevron-up")) {
+				let addAmount = event.target;
+				let id = addAmount.dataset.id;
+				
+				let tempItem = cart.find(item => item.id === id);
+				tempItem.amount = tempItem.amount + 1;
+				
+				Storage.saveCart(cart);
+				this.setCartValues(cart);
+				
+				addAmount.nextElementSibling.innerText = tempItem.amount;
+			}
+			else if (event.target.classList.contains("fa-chevron-down")) {
+				let lowerAmount = event.target;
+				let id = lowerAmount.dataset.id;
+				
+				let tempItem = cart.find(item => item.id === id);
+				tempItem.amount = tempItem.amount - 1;
+				
+				if (tempItem.amount > 0) {
+					Storage.saveCart(cart);
+					this.setCartValues(cart);
+					lowerAmount.previousElementSibling.innerText = tempItem.amount;
+				} 
+				else {
+					cartContent.removeChild(lowerAmount.parentElement.parentElement);
+					this.removeItem(id);
+				}
+			}
+		});
 	}
 	
 	clearCart() {
 		// console.log(this);
-		cart = [];
-		this.setCartValues(cart);
-		Storage.saveCart(cart);
-		
-		const buttons = [...document.querySelectorAll(".bag-btn")];
-		
-		buttons.forEach(button => {
-			button.disabled = false;
-			button.innerHTML = `<i class="fas fa-shopping-cart"></i>add to bag`;
-		});
+		let cartItems = cart.map(item => item.id);
+		cartItems.forEach(id => this.removeItem(id));
 		
 		while (cartContent.children.length > 0) {
 			cartContent.removeChild(cartContent.children[0]);
 		}
-		
 		this.hideCart();
+	}
+	
+	removeItem(id) {
+		cart = cart.filter(item => item.id !== id);
+		
+		this.setCartValues(cart);
+		Storage.saveCart(cart);
+		
+		let button = this.getSingleButton(id);
+		button.disabled = false;
+		button.innerHTML = `<i class="fas fa-shopping-cart"></i>add to bag`;
+	}
+	
+	getSingleButton(id) {
+		return buttonsDOM.find(button => button.dataset.id === id);
 	}
 }
 
@@ -213,6 +275,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	const ui = new UI();
 	const products = new Products();
 	
+	// set up the App
 	ui.setupAPP();
 	
 	// get all products
@@ -225,5 +288,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			})
 			.then(() => {
 				ui.getBagButtons();
+				ui.cartLogic();
 			});
 });
