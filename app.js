@@ -158,6 +158,32 @@ class UI {
 	populateCart(cart) {
 		cart.forEach(item => this.addCartItem(item));
 	}
+	
+	cartLogic() {
+		clearCartBtn.addEventListener("click", () => {
+			this.clearCart();
+		});
+	}
+	
+	clearCart() {
+		// console.log(this);
+		cart = [];
+		this.setCartValues(cart);
+		Storage.saveCart(cart);
+		
+		const buttons = [...document.querySelectorAll(".bag-btn")];
+		
+		buttons.forEach(button => {
+			button.disabled = false;
+			button.innerHTML = `<i class="fas fa-shopping-cart"></i>add to bag`;
+		});
+		
+		while (cartContent.children.length > 0) {
+			cartContent.removeChild(cartContent.children[0]);
+		}
+		
+		this.hideCart();
+	}
 }
 
 // local storage
